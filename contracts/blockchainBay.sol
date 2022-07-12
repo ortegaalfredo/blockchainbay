@@ -94,11 +94,13 @@ contract BlockchainBay {
      // Vote function: Increments the LSB of the data (second) array of the magnet entry
      // Doesn't operate on ascii links
      function vote(uint256 Id) public {
-      bytes32 mask=bytes32(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00);
-      uint8 b=uint8(Magnet[Id][1][0]);
+      uint256 mask=(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00);
+      uint256 data = uint256(Magnet[Id][1]);
+      uint8 b=uint8(data & 0xFF);
       if (b<0xff) {
          b++;
-         Magnet[Id][1] =  ( Magnet[Id][1] & mask) | bytes1(b);
+         data = (data & mask) + b;
+         Magnet[Id][1] = bytes32(data);
       }
      }
 
