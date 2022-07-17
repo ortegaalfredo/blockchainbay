@@ -1,0 +1,5 @@
+1.1 - Jul 17 2022
+ - Replaced eth-brownie with web3.py
+ - Added support for multiple OSes, windows, *BSD, etc.
+1.0 - Jul 12 2022
+ - Initial version

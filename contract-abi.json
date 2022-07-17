@@ -1,0 +1,264 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "ItemsAscii",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "asciiCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "data",
+        "type": "string"
+      }
+    ],
+    "name": "createAscii",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "data",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "createMagnet",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32[][10]",
+        "name": "data",
+        "type": "bytes32[][10]"
+      }
+    ],
+    "name": "createMagnet10",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "Id",
+        "type": "uint256"
+      }
+    ],
+    "name": "getAscii",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "minId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getAsciiMulti",
+    "outputs": [
+      {
+        "internalType": "string[]",
+        "name": "",
+        "type": "string[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "Id",
+        "type": "uint256"
+      }
+    ],
+    "name": "getMagnet",
+    "outputs": [
+      {
+        "internalType": "bytes32[10]",
+        "name": "",
+        "type": "bytes32[10]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getMagnetCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "minId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getMagnets",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32[10]",
+            "name": "slice",
+            "type": "bytes32[10]"
+          }
+        ],
+        "internalType": "struct BlockchainBay.TMagnet[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "minId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "what",
+        "type": "bytes"
+      }
+    ],
+    "name": "searchMagnet",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "Count",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32[10]",
+            "name": "slice",
+            "type": "bytes32[10]"
+          }
+        ],
+        "internalType": "struct BlockchainBay.TMagnet[20]",
+        "name": "",
+        "type": "tuple[20]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "version",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "Id",
+        "type": "uint256"
+      }
+    ],
+    "name": "vote",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -10,18 +10,10 @@ Doesn't require any funds to search and download torrents, only to upload a new 
 
 ## Requeriments:
 
-Note: This tool was only tested on Ubuntu 20.04 LTR and Brownie 1.19.
-
-First, download this repository.
+The only requirement is the web3.py library. It can be installed in all supported OSes in this way:
 
 ```
-git clone https://github.com/ortegaalfredo/blockchainbay.git
-```
-
-You need to install the brownie python framework:
-
-```
-pip install eth-brownie
+pip install web3
 ```
 
 Optionally, install transmission-cli to download magnet torrents:
@@ -29,16 +21,10 @@ Optionally, install transmission-cli to download magnet torrents:
 ```
 sudo apt install transmission-cli
 ```
+Or the equivalent in your OS (transmission-cli need to be in the path).
 
-After installing required packages, you need to configure the ankr gateway, and create a default account, executing the follwing commands:
 
-```
-brownie networks modify polygon-main host=https://rpc.ankr.com/polygon
-
-brownie accounts generate polygon-account
-```
-
-The Blockchainbay tool by default only reads from the blockchain and this operation don't require any balance in the account, so it can be empty.
+The Blockchainbay tool by default only reads from the blockchain and this operation don't require any balance in the account, so it can be empty. You don't need to setup any account as one is provided by default.
 
 Those instructions are for using the polygon network with the Ankr gateway, but you can use any network (Ethereum, optimism, etc.) with any web3 gateway, like Infura. By default, Blockchain bay uses a contract deployed in the Polygon network, and uses the Ankr web3 gateway.
 
@@ -132,6 +118,12 @@ And if correctly configured, the tool should start uploading your torrents to th
 ## Custom smart-contract
 
 You can compile and deploy your own smart-contract database, for this, issue this command from the root dir:
+
+You will need the eth-brownie framework installed, using pip3, or pipx:
+
+```
+pip3 install eth-brownie
+```
 
 To compile the smart contract:
 

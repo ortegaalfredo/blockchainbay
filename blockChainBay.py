@@ -1,10 +1,21 @@
 #!/usr/bin/python3
-
-import sys,configparser,argparse,time,subprocess,readline,os
+# -*- coding: utf-8 -*-
+import sys,configparser,argparse,time,subprocess,os
 import urllib.parse
 from typing import NamedTuple
+from web3 import Web3
+from web3.middleware import geth_poa_middleware
+import platform
 
-from brownie import accounts,network,project,convert
+import collections
+collections.Callable=collections.abc.Callable
+
+try:
+    import readline
+except:
+    from pyreadline import Readline
+    readline=Readline()
+    pass
 
 # Print logo
 def logo():
@@ -12,7 +23,7 @@ def logo():
     ____________________________
   /|............................|
  | |:       BlockChain Bay     :|
- | |:           V1.0           :|
+ | |:   V1.1 'Fuck Metallica'  :|
  | |:     ,-.   _____   ,-.    :|
  | |:    ( `)) [_____] ( `))   :|
  |v|:     `-`   ' ' '   `-`    :|
@@ -44,35 +55,33 @@ class Magnet(NamedTuple):
   @staticmethod
   def unpackMagnet(bytes32magnet):
       #decode infohash
-      infohash=repr(bytes32magnet[0])[26:]
+      infohash=bytes32magnet[0][12:].hex()
       #decode name
       name=b''
       for i in range(2,10):
-        name+=bytearray.fromhex(repr(bytes32magnet[i])[2:])
-      for i in range(len(name)):
-        if name[i]==0:
-          name=name[:i]
-          break
-      name=name.decode()
+        name+=bytes32magnet[i]
+      name=name.decode('utf-8').strip('\x00')
       #decode data
-      size_bytes = int(repr(bytes32magnet[1])[2:2+16],base=16)
-      created_unix = int(repr(bytes32magnet[1])[18:18+16],base=16)
-      seeders      = int(repr(bytes32magnet[1])[34:34+4],base=16)
-      leechers     = int(repr(bytes32magnet[1])[38:38+4],base=16)
-      completed    = int(repr(bytes32magnet[1])[42:42+4],base=16)
-      scraped_date_unix = int(repr(bytes32magnet[1])[46:46+16],base=16)
-      vote         = int(repr(bytes32magnet[1])[62:62+4],base=16)
+      size_bytes = int.from_bytes(bytes32magnet[1][0:8],"big",signed=False)
+      created_unix = int.from_bytes(bytes32magnet[1][8:8+8],"big",signed=False)
+      seeders      = int.from_bytes(bytes32magnet[1][16:16+2],"big",signed=False)
+      leechers     = int.from_bytes(bytes32magnet[1][18:18+2],"big",signed=False)
+      completed    = int.from_bytes(bytes32magnet[1][20:20+2],"big",signed=False)
+      scraped_date_unix = int.from_bytes(bytes32magnet[1][22:22+8],"big",signed=False)
+      vote         = int.from_bytes(bytes32magnet[1][30:30+2],"big",signed=False)
       return(infohash,name,size_bytes,created_unix,seeders,leechers,completed,scraped_date_unix,vote)
   #--- Pack magnet into bytes32 array
   def packMagnet(self,maxNameLenght=256):
       ret=[]
       initialVotes=0
       #convert infohash to bytes32
-      ihash=convert.to_bytes(self.infohash.decode(),"bytes32")
+      ihash=bytes.fromhex(self.infohash.decode())
+      #pad with 0x00
+      ihash=(b'\x00'*(32-len(ihash)))+ihash
       ret.append(ihash)
       #convert integers to bytes32
       packInts="%016X%016X%04X%04X%04X%016X%04X" % (self.size_bytes,self.created_unix,self.seeders,self.leechers,self.completed,self.scraped_date_unix,initialVotes)
-      ints=convert.to_bytes(packInts,"bytes32")
+      ints=bytes.fromhex(packInts)
       ret.append(ints)
       #compress and convert name to bytes32 array
       #name=zlib.compress(name) # cannot use search if we compress on the server
@@ -83,7 +92,7 @@ class Magnet(NamedTuple):
           exit(-1)
       hexname=pname.hex()
       for i in range(0,len(hexname),64):
-          iname=convert.to_bytes(hexname[i:i+64],"bytes32")
+          iname=bytes.fromhex(hexname[i:i+64])
           ret.append(iname)
       return ret
 
@@ -92,23 +101,33 @@ class ColorPrint:
 
     @staticmethod
     def print_fail(message, end = '\n'):
-        sys.stderr.write('\x1b[1;31m' + message.strip() + '\x1b[0m' + end)
+        if (platform.system()=='Windows'):
+              sys.stdout.write(message.strip() + end)
+        else: sys.stderr.write('\x1b[1;31m' + message.strip() + '\x1b[0m' + end)
 
     @staticmethod
     def print_pass(message, end = '\n'):
-        sys.stdout.write('\x1b[1;32m' + message.strip() + '\x1b[0m' + end)
+        if (platform.system()=='Windows'):
+              sys.stdout.write(message.strip() + end)
+        else: sys.stdout.write('\x1b[1;32m' + message.strip() + '\x1b[0m' + end)
 
     @staticmethod
     def print_warn(message, end = '\n'):
-        sys.stderr.write('\x1b[1;33m' + message.strip() + '\x1b[0m' + end)
+        if (platform.system()=='Windows'):
+              sys.stdout.write(message.strip() + end)
+        else: sys.stderr.write('\x1b[1;33m' + message.strip() + '\x1b[0m' + end)
 
     @staticmethod
     def print_info(message, end = '\n'):
-        sys.stdout.write('\x1b[1;34m' + message.strip() + '\x1b[0m' + end)
+        if (platform.system()=='Windows'):
+              sys.stdout.write(message.strip() + end)
+        else: sys.stdout.write('\x1b[1;34m' + message.strip() + '\x1b[0m' + end)
 
     @staticmethod
     def print_bold(message, end = '\n'):
-        sys.stdout.write('\x1b[1;37m' + message.strip() + '\x1b[0m' + end)
+        if (platform.system()=='Windows'):
+              sys.stdout.write(message.strip() + end)
+        else: sys.stdout.write('\x1b[1;37m' + message.strip() + '\x1b[0m' + end)
 
 # Simple logging
 def log(message,type):
@@ -116,42 +135,40 @@ def log(message,type):
 
 # Network, account and smart contract initialization
 def init():
-    active_project = None
-    if project.check_for_project():
-        active_project = project.load()
-        active_project.load_config()
-    from brownie.project.BlockchainbayProject import BlockchainBay
     global config
     config = configparser.ConfigParser()
     config.read('config.ini')
     config=config['DEFAULT']
     log("Using network %s, account %s" % (config['network'],config['account']) ,"I")
-    global t
-    global account
-    try:
-      network.connect(config['network'])
-    except:
-      log("Error connecting to network, try adding network and account to brownie in this way:","E")
-      print("\n\tbrownie networks modify polygon-main host=https://rpc.ankr.com/polygon")
-      exit(0)
-    try:
-      account = accounts.load(config['account'],password=config['accountpass'])
-    except:
-      log("Error connecting to account, try generating an account in this way:","E")
-      print("\n\tbrownie accounts generate %s" % config['account'])
-      exit(0)
-
-    t = BlockchainBay.at(config['defaultContractAddress'])
-    log("Connected to smart contract at %s" % config['defaultContractAddress'],"I")
+    global web3
+    web3=Web3(Web3.HTTPProvider(config['network']))
+    web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    log("Is blockchain connected: "+repr(web3.isConnected()),'I')
     logo()
+    balance = web3.eth.getBalance(config['account'])
+    log("Balance of account %s: %f" % (config['account'],web3.fromWei(balance,'ether')),'I')
+    abi=open(config['abi'],'r').read()
+    global contract
+    contract = web3.eth.contract(address=config['defaultcontractaddress'],abi=abi)
+    log("Connected to smart contract at %s" % config['defaultContractAddress'],"I")
 
 
 #Test calling the contract
 def testContract():
-   count=t.getMagnetCount()
+   count=contract.functions.getMagnetCount().call()
    if count==0:
     log("Database reports a total of %d torrents, fill it with something, it's new." % (count),"W")
    else: log("Database reports a total of %d torrents" % (count),"I")
+
+# Send transaction and wait for receipt
+def sendTransaction(fcall):
+          transaction = fcall.buildTransaction({'nonce': web3.eth.get_transaction_count(config["account"])})
+          private_key = config['private-key']
+          signed_txn = web3.eth.account.signTransaction(transaction, private_key=private_key)
+          tx_hash=web3.eth.sendRawTransaction(signed_txn.rawTransaction)
+          log("Transaction sent. Id is %s waiting for receipt..." % repr(tx_hash),"I")
+          receipt=web3.eth.wait_for_transaction_receipt(tx_hash)
+          print("Transaction sent successfully. Receipt:"+repr(receipt.transactionHash.hex()))
 
 # Download torrents to local cache file
 def sync():
@@ -159,7 +176,7 @@ def sync():
   cache=[]
   localCount=0
   cachefile = config['cachefile']
-  remoteCount=t.getMagnetCount()
+  remoteCount=contract.functions.getMagnetCount().call()
   try:
     a=open(cachefile,"rb")
     for l in a.readlines():
@@ -178,10 +195,17 @@ def sync():
       m = Magnet(infohash,name,size_bytes,created_unix,seeders,leechers,completed,scraped_date_unix,vote)
       cache.append(m)
     a.close()
-  except:
+  except Exception as e:
     log('Cache file not found, creating it..','E')
+    log(e,"E")
     pass
-  downloadCount=remoteCount-localCount  
+  downloadCount=remoteCount-localCount
+  if (downloadCount<0):
+    a=input('Local cache is different than remote. Erase it (y/n)?')
+    if (a.lower()=='y'):
+      os.remove(cachefile)
+      localCount=0
+      downloadCount=remoteCount-localCount
   log("Local torrents: %d Remote torrents: %d Need to download: %d" % (localCount,remoteCount,downloadCount),'I')
 
   step=500
@@ -189,12 +213,16 @@ def sync():
       rmax=i+step
       if (rmax>remoteCount): rmax=remoteCount
       log("Downloading %d-%d from %d torrents" % (i,rmax,downloadCount),'I')
-      magnets=t.getMagnets(i,rmax)
-      f=open(cachefile,"a")
+      try:
+        magnets=contract.functions.getMagnets(i,rmax).call()
+      except:
+        log("Error downloading torrents %d-%d" % (i,rmax),"E")
+        continue
+      f=open(cachefile,"ab")
       for m in magnets:
         data = Magnet.unpackMagnet(m[0])
         line="%s;%s;%d;%d;%d;%d;%d;%d;%d\n" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8])
-        f.write(line)
+        f.write(line.encode('utf-8'))
         # Add magnet to cache
         infohash=data[0].encode('utf-8')
         name=data[1].encode('utf-8')
@@ -223,7 +251,7 @@ def main():
     if cmd.startswith('/getid '):
       try:
         Id=int(cmd.split(' ')[1])
-        magnet=t.getMagnet(Id)
+        magnet=contract.functions.getMagnet(Id).call()
         mdata=Magnet.unpackMagnet(magnet)
         print(mdata[0], mdata[1], mdata[2], mdata[3], mdata[4], mdata[5], mdata[6], mdata[7], mdata[8])
       except:
@@ -235,30 +263,30 @@ def main():
     if cmd.startswith('/benchmark'):
       log("Performing Benchmark....",'I')
       a=time.time()
-      (count,magnets)=t.searchMagnet(0,10,b"mp4")
+      (count,magnets)=contract.functions.searchMagnet(0,10,b"mp4").call()
       log("searchMagnet (10): %f" %(time.time()-a),'I')
 
       a=time.time()
-      (count,magnets)=t.searchMagnet(0,100,b"mp4")
+      (count,magnets)=contract.functions.searchMagnet(0,100,b"mp4").call()
       log("searchMagnet (100): %f" %(time.time()-a),'I')
       
       a=time.time()
-      (count,magnets)=t.searchMagnet(0,400,b"mp4")
+      (count,magnets)=contract.functions.searchMagnet(0,400,b"mp4").call()
       log("searchMagnet (400): %f" %(time.time()-a),'I')
       
       a=time.time()
-      magnets=t.getMagnets(0,10)
+      magnets=contract.functions.getMagnets(0,10).call()
       log("getMagnets (10): %f" % (time.time()-a),'I')
 
       a=time.time()
-      magnets=t.getMagnets(0,100)
+      magnets=contract.functions.getMagnets(0,100).call()
       log("getMagnets (100): %f" % (time.time()-a),'I')
       continue
 
     #--- remote search command
     if cmd.startswith('/remote'):
       word=cmd.split(' ')[1]
-      mcount=t.getMagnetCount()
+      mcount=contract.functions.getMagnetCount().call()
       step=100
       searchResults.clear()
       fcount=0
@@ -267,7 +295,7 @@ def main():
         smax=i+step
         if (smax>mcount): smax=mcount
         log('Searching remotely for "%s" on %d-%d from %d torrents' % (word,smin,smax,mcount),'I')
-        (count,magnets)=t.searchMagnet(smin,smax,word.encode('utf-8'))
+        (count,magnets)=contract.functions.searchMagnet(smin,smax,word.encode('utf-8')).call()
         for i in range(count):
           magnet=magnets[i][0]
           data=Magnet.unpackMagnet(magnet)
@@ -321,14 +349,14 @@ def main():
     #--- Vote for a particular torrent ID      
     if cmd.startswith('/vote'):
       Id=int(cmd.split(' ')[1])
-      magnet=t.getMagnet(Id)
+      magnet=contract.functions.getMagnet(Id).call()
       i=Magnet.unpackMagnet(magnet)
       print("\n")
-      print("%s size:%d bytes seeders:%d leechers:%d" % (i[1],i[2],i[4],i[5]))
+      print("%s size:%d bytes seeders:%d leechers:%d votes: %d" % (i[1],i[2],i[4],i[5],i[8]))
       a=input('About to vote up that torrent, proceed (y/n)?')
       if (a.lower()=='y'):
-        #account = accounts.load(config['account'],password=config['accountpass'])
-        t.vote(Id,{'from': account})
+        fcall=contract.functions.vote(Id)
+        sendTransaction(fcall)
       log('Done.','I')
       continue
 
@@ -394,13 +422,13 @@ def argparser():
         try:
           mcount+=1
           m = Magnet(q[0],q[1],int(q[2]),int(q[3]),int(q[4]),int(q[5]),int(q[6]),int(q[7]),0)
-          #packedMagnets.append(packMagnet(q[0],q[1],int(q[2]),int(q[3]),int(q[4]),int(q[5]),int(q[6]),int(q[7])))
-          packedMagnets.append(m.packMagnet())# packMagnet(q[0],q[1],int(q[2]),int(q[3]),int(q[4]),int(q[5]),int(q[6]),int(q[7])))
+          packedMagnets.append(m.packMagnet())
           # publish blocks of 10 torrents
           if len(packedMagnets)==10:
               try:
-                itemId=t.createMagnet10(packedMagnets,{'from': account}).return_value
-                print("Magnets created successfully. Id is %d" % itemId)
+                fcall=contract.functions.createMagnet10(packedMagnets)
+                sendTransaction(fcall)
+                print("Magnets created successfully. Id is %d" % fcall.call())
               except Exception as e:
                 log(e,"E")
               print("Sent Magnets %d to %d" % (mcount-10,mcount))
@@ -409,10 +437,14 @@ def argparser():
             log(e,"E")
             pass
       # send remaining torrents
+      from web3.gas_strategies.rpc import rpc_gas_price_strategy
+      web3.eth.set_gas_price_strategy(rpc_gas_price_strategy)
       for i in packedMagnets:
         try:
-          itemId=t.createMagnet(i,{'from': account}).return_value
-          print("Magnet created successfully. Id is %d" % itemId)
+          print("Sending torrent with infohash: %s" % i[0].hex())
+          fcall=contract.functions.createMagnet(i)
+          sendTransaction(fcall)
+          print("Torrent ID is %d" % fcall.call())
         except Exception as e:
           log(e,"E")
           pass
