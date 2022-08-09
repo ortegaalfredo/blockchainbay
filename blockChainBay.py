@@ -1,11 +1,12 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 import sys,configparser,argparse,time,subprocess,os
 import urllib.parse
 from typing import NamedTuple
+import platform
+from pathlib import Path
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-import platform
 
 import collections
 collections.Callable=collections.abc.Callable
@@ -23,7 +24,7 @@ def logo():
     ____________________________
   /|............................|
  | |:       BlockChain Bay     :|
- | |:   V1.1 'Fuck Metallica'  :|
+ | |:    V1.3.2 'Interlinked'  :|
  | |:     ,-.   _____   ,-.    :|
  | |:    ( `)) [_____] ( `))   :|
  |v|:     `-`   ' ' '   `-`    :|
@@ -35,6 +36,7 @@ def logo():
       `--------------------'
 
     """)
+
 
 #magnet cache
 cache=[]
@@ -129,6 +131,9 @@ class ColorPrint:
               sys.stdout.write(message.strip() + end)
         else: sys.stdout.write('\x1b[1;37m' + message.strip() + '\x1b[0m' + end)
 
+#abi
+abi='[{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"ItemsAscii","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"asciiCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"data","type":"string"}],"name":"createAscii","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32[]","name":"data","type":"bytes32[]"}],"name":"createMagnet","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32[][10]","name":"data","type":"bytes32[][10]"}],"name":"createMagnet10","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"Id","type":"uint256"}],"name":"getAscii","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"minId","type":"uint256"},{"internalType":"uint256","name":"maxId","type":"uint256"}],"name":"getAsciiMulti","outputs":[{"internalType":"string[]","name":"","type":"string[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"Id","type":"uint256"}],"name":"getMagnet","outputs":[{"internalType":"bytes32[10]","name":"","type":"bytes32[10]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getMagnetCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"minId","type":"uint256"},{"internalType":"uint256","name":"maxId","type":"uint256"}],"name":"getMagnets","outputs":[{"components":[{"internalType":"bytes32[10]","name":"slice","type":"bytes32[10]"}],"internalType":"struct BlockchainBay.TMagnet[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"minId","type":"uint256"},{"internalType":"uint256","name":"maxId","type":"uint256"},{"internalType":"bytes","name":"what","type":"bytes"}],"name":"searchMagnet","outputs":[{"internalType":"uint256","name":"Count","type":"uint256"},{"components":[{"internalType":"bytes32[10]","name":"slice","type":"bytes32[10]"}],"internalType":"struct BlockchainBay.TMagnet[20]","name":"","type":"tuple[20]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"version","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"Id","type":"uint256"}],"name":"vote","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
+
 # Simple logging
 def log(message,type):
     print("[%s] %s" % (type,message))
@@ -136,10 +141,29 @@ def log(message,type):
 # Network, account and smart contract initialization
 def init():
     global config
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    config=config['DEFAULT']
-    log("Using network %s, account %s" % (config['network'],config['account']) ,"I")
+    configp = configparser.ConfigParser()
+    configfile = "%s/%s" % (Path.home(),'blockchainbay.ini')
+    configp.read(configfile)
+    config=configp['DEFAULT']
+    try: 
+        log("Using network %s, account %s" % (config['network'],config['account']) ,"I")
+    except:
+        log("Error reading config. Using defaults" ,"I")
+        ### mainnet polygon network
+        config['network'] = 'https://rpc.ankr.com/polygon'
+        config['defaultcontractaddress'] = '0xB9F2fd30Bf1D38647c00769204fbD6730059828c'
+        ### Default Account
+        config['account'] = '0x8c3638741010C813b49e9A1911b6c2de3F33A696'
+        config['private-key']='a361314abc3a1f57a8a55b5f2b021b5b86e0575179d6077d1e7cac4ffc4b19fb'
+        ### torrent config
+        config['cachefile']='blockchainbay-torrentCache.txt'
+        config['bittorrent-client']='transmission-cli'
+        config['link']='=magnet:?xt=urn:btih:%%s&dn=%%s&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.open-internet.nl:6969/announce&tr=udp://tracker.leechers-paradise.org:6969/announce&tr=udp://tracker.internetwarriors.net:1337/announce&tr=udp://tracker.opentrackr.org:1337/announce&tr=udp://9.rarbg.to:2710/announce&tr=udp://9.rarbg.me:2710/announce&tr=http://tracker3.itzmx.com:6961/announce&tr=http://tracker1.itzmx.com:8080/announce&tr=udp://exodus.desync.com:6969/announce&tr=udp://explodie.org:6969/announce&tr=udp://ipv4.tracker.harry.lu:80/announce&tr=udp://denis.stalker.upeer.me:6969/announce&tr=udp://tracker.torrent.eu.org:451/announce&tr=udp://tracker.tiny-vps.com:6969/announce&tr=udp://thetracker.org:80/announce&tr=udp://open.demonii.si:1337/announce&tr=udp://tracker4.itzmx.com:2710/announce&tr=udp://tracker.cyberia.is:6969/announce&tr=udp://retracker.netbynet.ru:2710/announce'
+        #create config
+        with open(configfile,'w') as configfile:
+            configp.write(configfile)
+        pass
+
     global web3
     web3=Web3(Web3.HTTPProvider(config['network']))
     web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -147,7 +171,6 @@ def init():
     logo()
     balance = web3.eth.getBalance(config['account'])
     log("Balance of account %s: %f" % (config['account'],web3.fromWei(balance,'ether')),'I')
-    abi=open(config['abi'],'r').read()
     global contract
     contract = web3.eth.contract(address=config['defaultcontractaddress'],abi=abi)
     log("Connected to smart contract at %s" % config['defaultContractAddress'],"I")
@@ -175,7 +198,7 @@ def sync():
   global cache
   cache=[]
   localCount=0
-  cachefile = config['cachefile']
+  cachefile = "%s/%s" % (Path.home(),config['cachefile'])
   remoteCount=contract.functions.getMagnetCount().call()
   try:
     a=open(cachefile,"rb")

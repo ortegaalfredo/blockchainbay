@@ -1,19 +1,18 @@
-# Blockchain Bay: 
+# The Blockchain Bay:
 
-Blockchainbay is a torrent distribution tool hosted on a EVM-compatible blockchain.
+The Blockchainbay is a torrent distribution tool hosted on a EVM-compatible blockchain.
 This is a tool similar to Pirate Bay, but using a EVM-compatible blockchain (Ethereum, polygon, BSC, etc.) as a database.
 
 Doesn't require any funds to search and download torrents, only to upload a new torrent (As write operations modify the database).
 
 ![screenshot.png](https://github.com/ortegaalfredo/blockchainbay/blob/main/screenshot.png?raw=true)
 
+## Installation:
 
-## Requeriments:
-
-The only requirement is the web3.py library. It can be installed in all supported OSes in this way:
+The easiest way is to use pip in this way:
 
 ```
-pip install web3
+pip install blockchainbay
 ```
 
 Optionally, install transmission-cli to download magnet torrents:
@@ -21,7 +20,8 @@ Optionally, install transmission-cli to download magnet torrents:
 ```
 sudo apt install transmission-cli
 ```
-Or the equivalent in your OS (transmission-cli need to be in the path).
+
+Or the equivalent in your OS (transmission-cli need to be in the path). This executable can be configured in the config.ini file.
 
 
 The Blockchainbay tool by default only reads from the blockchain and this operation don't require any balance in the account, so it can be empty. You don't need to setup any account as one is provided by default.
@@ -33,7 +33,7 @@ Those instructions are for using the polygon network with the Ankr gateway, but 
 Execute the command-line tool:
 
 ```
-./blockChainBay.py
+$ blockChainBay.py
 ```
 At start, the utility will sync with the database on the blockchain, downloading all torrents locally (this can take some minute). It's much faster to search in a local database, however you can also search for torrents remotely using the /remote command.
 
