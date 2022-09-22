@@ -39,6 +39,23 @@ At start, the utility will sync with the database on the blockchain, downloading
 
 Issuing /help will show you the available commands:
 
+## Web interface
+
+Starting with 1.5.0, you can use a web interface by using the --web argument:
+
+```
+$ blockChainBay.py --web
+...
+[I] Starting web Server...
+http://localhost:8888/
+
+```
+
+Then you can point your browser to http://localhost:8888 and access the web interface, similar to the one at the original ThePirateBay.org site:
+
+![screenshot-web.png](https://github.com/ortegaalfredo/blockchainbay/blob/main/screenshot-web.png?raw=true)
+
+
 ## Demo video:
 
 [![Demo Video](http://img.youtube.com/vi/g0w4zcT-RLE/0.jpg)](https://www.youtube.com/watch?v=g0w4zcT-RLE "BlockchainBay demo")

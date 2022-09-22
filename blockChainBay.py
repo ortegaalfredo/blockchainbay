@@ -5,26 +5,20 @@ import urllib.parse
 from typing import NamedTuple
 import platform
 from pathlib import Path
+import web1 
 from web3 import Web3
+import threading
 from web3.middleware import geth_poa_middleware
-
 import collections
 collections.Callable=collections.abc.Callable
 
-try:
-    import readline
-except:
-    from pyreadline import Readline
-    readline=Readline()
-    pass
-
-# Print logo
+# Logo
 def logo():
-    print("""
+    return ("""
     ____________________________
   /|............................|
  | |:       BlockChain Bay     :|
- | |:    V1.3.2 'Interlinked'  :|
+ | |: V1.5.0 'Aguante Megadeth':|
  | |:     ,-.   _____   ,-.    :|
  | |:    ( `)) [_____] ( `))   :|
  |v|:     `-`   ' ' '   `-`    :|
@@ -37,9 +31,27 @@ def logo():
 
     """)
 
+def printLogo():
+    print(logo())
 
-#magnet cache
-cache=[]
+# Fix for readline in windows
+try:
+    import readline
+except:
+    from pyreadline import Readline
+    readline=Readline()
+    pass
+
+class Data:
+    #magnet cache
+    cache=[]
+    #Web3 contract object
+    contract:str
+
+# app data storge
+global data
+data = Data()
+data.logo=logo()
 
 #This class handles the Magnet storage and packing/unpacking to bytes32 format
 class Magnet(NamedTuple):
@@ -145,6 +157,7 @@ def init():
     configfile = "%s/%s" % (Path.home(),'blockchainbay.ini')
     configp.read(configfile)
     config=configp['DEFAULT']
+    data.config=config
     try: 
         log("Using network %s, account %s" % (config['network'],config['account']) ,"I")
     except:
@@ -158,27 +171,33 @@ def init():
         ### torrent config
         config['cachefile']='blockchainbay-torrentCache.txt'
         config['bittorrent-client']='transmission-cli'
-        config['link']='=magnet:?xt=urn:btih:%%s&dn=%%s&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.open-internet.nl:6969/announce&tr=udp://tracker.leechers-paradise.org:6969/announce&tr=udp://tracker.internetwarriors.net:1337/announce&tr=udp://tracker.opentrackr.org:1337/announce&tr=udp://9.rarbg.to:2710/announce&tr=udp://9.rarbg.me:2710/announce&tr=http://tracker3.itzmx.com:6961/announce&tr=http://tracker1.itzmx.com:8080/announce&tr=udp://exodus.desync.com:6969/announce&tr=udp://explodie.org:6969/announce&tr=udp://ipv4.tracker.harry.lu:80/announce&tr=udp://denis.stalker.upeer.me:6969/announce&tr=udp://tracker.torrent.eu.org:451/announce&tr=udp://tracker.tiny-vps.com:6969/announce&tr=udp://thetracker.org:80/announce&tr=udp://open.demonii.si:1337/announce&tr=udp://tracker4.itzmx.com:2710/announce&tr=udp://tracker.cyberia.is:6969/announce&tr=udp://retracker.netbynet.ru:2710/announce'
+        config['link']='magnet:?xt=urn:btih:%%s&dn=%%s&tr=udp://tracker.coppersurfer.tk:6969/announce&tr=udp://tracker.open-internet.nl:6969/announce&tr=udp://tracker.leechers-paradise.org:6969/announce&tr=udp://tracker.internetwarriors.net:1337/announce&tr=udp://tracker.opentrackr.org:1337/announce&tr=udp://9.rarbg.to:2710/announce&tr=udp://9.rarbg.me:2710/announce&tr=http://tracker3.itzmx.com:6961/announce&tr=http://tracker1.itzmx.com:8080/announce&tr=udp://exodus.desync.com:6969/announce&tr=udp://explodie.org:6969/announce&tr=udp://ipv4.tracker.harry.lu:80/announce&tr=udp://denis.stalker.upeer.me:6969/announce&tr=udp://tracker.torrent.eu.org:451/announce&tr=udp://tracker.tiny-vps.com:6969/announce&tr=udp://thetracker.org:80/announce&tr=udp://open.demonii.si:1337/announce&tr=udp://tracker4.itzmx.com:2710/announce&tr=udp://tracker.cyberia.is:6969/announce&tr=udp://retracker.netbynet.ru:2710/announce'
         #create config
         with open(configfile,'w') as configfile:
             configp.write(configfile)
         pass
 
     global web3
+    # Connect to web3 gateway
     web3=Web3(Web3.HTTPProvider(config['network']))
     web3.middleware_onion.inject(geth_poa_middleware, layer=0)
     log("Is blockchain connected: "+repr(web3.isConnected()),'I')
-    logo()
+    printLogo()
     balance = web3.eth.getBalance(config['account'])
     log("Balance of account %s: %f" % (config['account'],web3.fromWei(balance,'ether')),'I')
-    global contract
-    contract = web3.eth.contract(address=config['defaultcontractaddress'],abi=abi)
+    data.contract = web3.eth.contract(address=config['defaultcontractaddress'],abi=abi)
     log("Connected to smart contract at %s" % config['defaultContractAddress'],"I")
+    # Start web server
+    if args.web:
+        log('Starting web Server...','I')
+        data.server=threading.Thread(target=web1.web1,args=(data,))
+        data.server.daemon = True
+        data.server.start()
 
 
 #Test calling the contract
 def testContract():
-   count=contract.functions.getMagnetCount().call()
+   count=data.contract.functions.getMagnetCount().call()
    if count==0:
     log("Database reports a total of %d torrents, fill it with something, it's new." % (count),"W")
    else: log("Database reports a total of %d torrents" % (count),"I")
@@ -195,11 +214,11 @@ def sendTransaction(fcall):
 
 # Download torrents to local cache file
 def sync():
-  global cache
-  cache=[]
+  global data
+  data.cache=[]
   localCount=0
   cachefile = "%s/%s" % (Path.home(),config['cachefile'])
-  remoteCount=contract.functions.getMagnetCount().call()
+  remoteCount=data.contract.functions.getMagnetCount().call()
   try:
     a=open(cachefile,"rb")
     for l in a.readlines():
@@ -216,7 +235,7 @@ def sync():
       scraped_date_unix=int(l[7])
       vote=int(l[8])
       m = Magnet(infohash,name,size_bytes,created_unix,seeders,leechers,completed,scraped_date_unix,vote)
-      cache.append(m)
+      data.cache.append(m)
     a.close()
   except Exception as e:
     log('Cache file not found, creating it..','E')
@@ -237,7 +256,7 @@ def sync():
       if (rmax>remoteCount): rmax=remoteCount
       log("Downloading %d-%d from %d torrents" % (i,rmax,downloadCount),'I')
       try:
-        magnets=contract.functions.getMagnets(i,rmax).call()
+        magnets=data.contract.functions.getMagnets(i,rmax).call()
       except:
         log("Error downloading torrents %d-%d" % (i,rmax),"E")
         continue
@@ -257,11 +276,12 @@ def sync():
         scraped_date_unix=int(data[7])
         vote=int(data[8])
         m = Magnet(infohash,name,size_bytes,created_unix,seeders,leechers,completed,scraped_date_unix,vote)
-        cache.append(m)
+        data.cache.append(m)
       f.close()
-  log('Sync done. Loaded torrents: %d' % (len(cache)),'I')
+  log('Sync done. Loaded torrents: %d' % (len(data.cache)),'I')
 
 def main():
+   global data
    global searchResults
    searchResults=[]
    while(True):
@@ -274,7 +294,7 @@ def main():
     if cmd.startswith('/getid '):
       try:
         Id=int(cmd.split(' ')[1])
-        magnet=contract.functions.getMagnet(Id).call()
+        magnet=data.contract.functions.getMagnet(Id).call()
         mdata=Magnet.unpackMagnet(magnet)
         print(mdata[0], mdata[1], mdata[2], mdata[3], mdata[4], mdata[5], mdata[6], mdata[7], mdata[8])
       except:
@@ -286,30 +306,30 @@ def main():
     if cmd.startswith('/benchmark'):
       log("Performing Benchmark....",'I')
       a=time.time()
-      (count,magnets)=contract.functions.searchMagnet(0,10,b"mp4").call()
+      (count,magnets)=data.contract.functions.searchMagnet(0,10,b"mp4").call()
       log("searchMagnet (10): %f" %(time.time()-a),'I')
 
       a=time.time()
-      (count,magnets)=contract.functions.searchMagnet(0,100,b"mp4").call()
+      (count,magnets)=data.contract.functions.searchMagnet(0,100,b"mp4").call()
       log("searchMagnet (100): %f" %(time.time()-a),'I')
       
       a=time.time()
-      (count,magnets)=contract.functions.searchMagnet(0,400,b"mp4").call()
+      (count,magnets)=data.contract.functions.searchMagnet(0,400,b"mp4").call()
       log("searchMagnet (400): %f" %(time.time()-a),'I')
       
       a=time.time()
-      magnets=contract.functions.getMagnets(0,10).call()
+      magnets=data.contract.functions.getMagnets(0,10).call()
       log("getMagnets (10): %f" % (time.time()-a),'I')
 
       a=time.time()
-      magnets=contract.functions.getMagnets(0,100).call()
+      magnets=data.contract.functions.getMagnets(0,100).call()
       log("getMagnets (100): %f" % (time.time()-a),'I')
       continue
 
     #--- remote search command
     if cmd.startswith('/remote'):
       word=cmd.split(' ')[1]
-      mcount=contract.functions.getMagnetCount().call()
+      mcount=data.contract.functions.getMagnetCount().call()
       step=100
       searchResults.clear()
       fcount=0
@@ -318,7 +338,7 @@ def main():
         smax=i+step
         if (smax>mcount): smax=mcount
         log('Searching remotely for "%s" on %d-%d from %d torrents' % (word,smin,smax,mcount),'I')
-        (count,magnets)=contract.functions.searchMagnet(smin,smax,word.encode('utf-8')).call()
+        (count,magnets)=data.contract.functions.searchMagnet(smin,smax,word.encode('utf-8')).call()
         for i in range(count):
           magnet=magnets[i][0]
           data=Magnet.unpackMagnet(magnet)
@@ -372,13 +392,13 @@ def main():
     #--- Vote for a particular torrent ID      
     if cmd.startswith('/vote'):
       Id=int(cmd.split(' ')[1])
-      magnet=contract.functions.getMagnet(Id).call()
+      magnet=data.contract.functions.getMagnet(Id).call()
       i=Magnet.unpackMagnet(magnet)
       print("\n")
       print("%s size:%d bytes seeders:%d leechers:%d votes: %d" % (i[1],i[2],i[4],i[5],i[8]))
       a=input('About to vote up that torrent, proceed (y/n)?')
       if (a.lower()=='y'):
-        fcall=contract.functions.vote(Id)
+        fcall=data.contract.functions.vote(Id)
         sendTransaction(fcall)
       log('Done.','I')
       continue
@@ -404,7 +424,7 @@ Available commands:
     if len(cmd)>2:
       searchResults.clear()
       fcount=0
-      for i in cache:
+      for i in data.cache:
         try:
           if i.name.lower().find(cmd.lower().encode('utf-8'))>=0:
             fcount+=1
@@ -426,12 +446,15 @@ def loadFile(file):
     torrents.append(ls)
   return torrents
 
+
 # Command-line argument parser
 # Used mostly as the torrent upload tool
 
 def argparser():
   parser = argparse.ArgumentParser(description='EVM Bittorrent distribution tool, (C) Cybergaucho 2022 @ortegaalfredo')
   parser.add_argument('--upload', type=str,required=False,help='Upload torrent from file')
+  parser.add_argument('--web', help='Start web server', action="store_true")
+  global args
   args = parser.parse_args()
   if args.upload:
     log('Loading file %s' % args.upload,'I')
@@ -449,7 +472,7 @@ def argparser():
           # publish blocks of 10 torrents
           if len(packedMagnets)==10:
               try:
-                fcall=contract.functions.createMagnet10(packedMagnets)
+                fcall=data.contract.functions.createMagnet10(packedMagnets)
                 sendTransaction(fcall)
                 print("Magnets created successfully. Id is %d" % fcall.call())
               except Exception as e:
@@ -465,15 +488,14 @@ def argparser():
       for i in packedMagnets:
         try:
           print("Sending torrent with infohash: %s" % i[0].hex())
-          fcall=contract.functions.createMagnet(i)
+          fcall=data.contract.functions.createMagnet(i)
           sendTransaction(fcall)
           print("Torrent ID is %d" % fcall.call())
         except Exception as e:
           log(e,"E")
           pass
-
-
       exit(0)
+    return args
 
 #readline auto-complete of commands
 def complete(text,state):

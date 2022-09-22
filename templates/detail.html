@@ -1,0 +1,67 @@
+$def with (form, logo,name,size,time,seed,leech,hash,link,text)
+ 
+<!doctype html>
+<html>
+	<head>
+	<meta name="robots" content="noindex">
+	<title>The Blockchain Bay</title>
+	<link rel="stylesheet" href="/static/tpb.css" type="text/css" />
+        <script type="text/javascript" src="/static/jquery.js"></script>
+        <script type="text/javascript">
+                                jQuery(document).ready(function() {
+                                jQuery(".button").click(function() {
+                                        var input_string = $$("input#textfield").val();
+                                        jQuery.ajax({
+                                                type: "POST",
+                                                data: {textfield : input_string},
+                                                success: function(data) {
+                                                jQuery('#foo').html(data).hide().fadeIn(1500);
+                                                },
+                                                });
+                                        return false;
+                                        });
+                                });
+                        </script>
+	<style> pre {font-family: "Courier New", Courier, monospace; }</style>
+    	</head>
+    <body>
+   	<center>    
+		<h2><pre> $logo </pre></h2>
+        	<br>
+        	<form class="form" method="post"> Torrent search:
+        	$:form.render()
+        	<input class="button" type="submit" value="send"/>    
+        	</form>
+ 
+        	<br><br>
+		<div class="browse">
+			<section class="col-center">
+				<span id="foo">$text</span> 
+           <div id="description_container">
+                <h2><label id="name">$name</label></h2>
+           <div id="metadata">
+                <dl id="meta-left" class="col-meta">
+                <div><dt class="dt-md">Size:</dt><dd><label id="size">$size</label></dd></div>
+                <br />
+                <div><dt class="dt-md">Uploaded:</dt><dd><label id="uld">$time</label></dd></div>
+                <br />
+                <div><dt class="dt-md">Seeders:</dt><dd><label id="s">$seed</label></dd></div>
+                <div><dt class="dt-md">Leechers:</dt><dd><label id="l">$leech</label></dd></div>
+                <div><dt class="dt-md">Info Hash:</dt><dd style="overflow-wrap: break-word; overflow: hidden;"><label id="ih">$hash</label></dd></div>
+                </dl>
+                </div>
+                <div class="links">
+			<label id="d"><H2>Torrent magnet link:</H2><a href="$link">$link</a></label>
+                </div>
+                <div class="links">
+                <label id="d2"></label>
+                </div>
+                </section>
+                </div>
+
+				
+		</div>
+	</center>
+    </body>
+     
+</html>
