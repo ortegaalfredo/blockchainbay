@@ -1,10 +1,27 @@
-import web
+import os,web
 import urllib.parse
+from web.httpserver import StaticMiddleware
+
+class MyStaticMiddleware(StaticMiddleware):
+    def __init__(self, app, prefix='/data/static/'):
+        StaticMiddleware.__init__(self, app, prefix)
+
 
 urls = ('/', 'index',
-        '/description','description')
-render = web.template.render('templates/')
+        '/description','description',
+        '/res/(.*)','static'
+        )
+srvpath=os.path.dirname(os.path.realpath(__file__))
+render = web.template.render('%s/data/templates/' % srvpath)
 my_form = web.form.Form(web.form.Textbox('', class_='textfield', id='textfield'))
+
+class static:
+    def GET(self, media):
+        try:
+            f = open('%s/data/static/%s' % (srvpath,media), 'r')
+            return f.read()
+        except:
+            return '' # you can send an 404 error here if you want
 
 class index:
     listStart='<ol id="torrents" class="view-single">'
@@ -71,4 +88,4 @@ def web1(dat):
     data = dat
     app = web.application(urls, globals())
     web.httpserver.runsimple(app.wsgifunc(), ("localhost", 8888))
-    app.run()
+    app.run(MyStaticMiddleware)

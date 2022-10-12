@@ -5,10 +5,10 @@ import urllib.parse
 from typing import NamedTuple
 import platform
 from pathlib import Path
-import web1 
 from web3 import Web3
 import threading
 from web3.middleware import geth_poa_middleware
+from blockchainbay import web1 
 import collections
 collections.Callable=collections.abc.Callable
 
@@ -18,7 +18,7 @@ def logo():
     ____________________________
   /|............................|
  | |:       BlockChain Bay     :|
- | |: V1.5.0 'Aguante Megadeth':|
+ | |: V1.5.3 'Aguante Megadeth':|
  | |:     ,-.   _____   ,-.    :|
  | |:    ( `)) [_____] ( `))   :|
  |v|:     `-`   ' ' '   `-`    :|
