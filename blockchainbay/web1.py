@@ -1,10 +1,5 @@
 import os,web
 import urllib.parse
-from web.httpserver import StaticMiddleware
-
-class MyStaticMiddleware(StaticMiddleware):
-    def __init__(self, app, prefix='/data/static/'):
-        StaticMiddleware.__init__(self, app, prefix)
 
 
 urls = ('/', 'index',
@@ -88,4 +83,3 @@ def web1(dat):
     data = dat
     app = web.application(urls, globals())
     web.httpserver.runsimple(app.wsgifunc(), ("localhost", 8888))
-    app.run(MyStaticMiddleware)

@@ -13,7 +13,7 @@ if os.path.isfile(requirement_path):
 setuptools.setup(
      name='blockchainbay',  
      install_requires=install_requires,
-     version='1.5.3',
+     version='1.5.5',
      scripts=['blockchainbay/blockChainBay.py'],
      author="Alfredo Ortega",
      author_email="ortegaalfredo@gmail.com",
