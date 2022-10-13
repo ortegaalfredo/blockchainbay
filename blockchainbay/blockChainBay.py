@@ -18,7 +18,7 @@ def logo():
     ____________________________
   /|............................|
  | |:       BlockChain Bay     :|
- | |: V1.5.3 'Aguante Megadeth':|
+ | |: V1.5.5 'Aguante Megadeth':|
  | |:     ,-.   _____   ,-.    :|
  | |:    ( `)) [_____] ( `))   :|
  |v|:     `-`   ' ' '   `-`    :|
@@ -262,19 +262,19 @@ def sync():
         continue
       f=open(cachefile,"ab")
       for m in magnets:
-        data = Magnet.unpackMagnet(m[0])
-        line="%s;%s;%d;%d;%d;%d;%d;%d;%d\n" % (data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8])
+        d = Magnet.unpackMagnet(m[0])
+        line="%s;%s;%d;%d;%d;%d;%d;%d;%d\n" % (d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],d[8])
         f.write(line.encode('utf-8'))
         # Add magnet to cache
-        infohash=data[0].encode('utf-8')
-        name=data[1].encode('utf-8')
-        size_bytes=int(data[2])
-        created_unix=int(data[3])
-        seeders=int(data[4])
-        leechers=int(data[5])
-        completed=int(data[6])
-        scraped_date_unix=int(data[7])
-        vote=int(data[8])
+        infohash=d[0].encode('utf-8')
+        name=d[1].encode('utf-8')
+        size_bytes=int(d[2])
+        created_unix=int(d[3])
+        seeders=int(d[4])
+        leechers=int(d[5])
+        completed=int(d[6])
+        scraped_date_unix=int(d[7])
+        vote=int(d[8])
         m = Magnet(infohash,name,size_bytes,created_unix,seeders,leechers,completed,scraped_date_unix,vote)
         data.cache.append(m)
       f.close()
